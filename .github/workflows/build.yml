@@ -100,6 +100,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 上一步把源码仓库 clone 到了当前目录，gh 会据此把 release 误判到 Selene-TV-source；
+          # 显式锁定到本工作流所在仓库（MoonTechLab/Selene-TV）。
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
           # 该 tag 已存在 release → 仅更新附件（--clobber 覆盖同名包），保留原有标题与说明，不新建、不改 log；
