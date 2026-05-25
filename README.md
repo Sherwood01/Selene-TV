@@ -24,6 +24,10 @@
   <img src="screenshot/02_movies.png" alt="电影分类" width="48%">
   <img src="screenshot/03_anime.png" alt="动漫每日放送" width="48%">
   <img src="screenshot/05_live.png" alt="直播" width="48%">
+  <img src="screenshot/06_player.png" alt="播放器" width="48%">
+  <img src="screenshot/07_player_sources.png" alt="播放中详情与换源" width="48%">
+  <img src="screenshot/08_live_play.png" alt="直播播放" width="48%">
+  <img src="screenshot/09_live_channels.png" alt="直播频道选择" width="48%">
 </details>
 
 ### 请不要在 B站、小红书、微信公众号、抖音、今日头条或其他中国大陆社交平台发布视频或文章宣传本项目，不授权任何"科技周刊/月刊"类项目或站点收录本项目。
