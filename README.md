@@ -92,27 +92,6 @@
 - **kotlinx.serialization** —— JSON 解析
 - **qrcode-kotlin** —— 遥控二维码生成
 
-## 🚀 构建与发布
-
-本仓库通过 GitHub Actions 自动构建：推送 `v*` 形式的 tag 即会拉取源码仓库、构建按 ABI 分包的 release APK，并发布到本仓库 Release。
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-需在 **Settings → Secrets and variables → Actions** 配置以下 Secrets：
-
-| Secret | 必需 | 说明 |
-|--------|------|------|
-| `PULL_TOKEN` | ✅ | 可读取私有源码仓库的 PAT（`Selene-TV-source` Contents: Read） |
-| `KEY_STORE_PASSWORD` | ✅ | keystore 密码 |
-| `KEY_PASSWORD` | ✅ | key 密码 |
-| `ALIAS` | ✅ | key 别名 |
-| `SIGNING_KEY` | ⬜ | 可选，base64 编码的 keystore，用于覆盖源码内已提交的 `key.jks` |
-
-> **签名稳定性**：源码仓库已提交 `key.jks`，CI 默认用它签名，每次 Release 使用同一签名，满足 Android 覆盖升级要求。仅当需要更换签名时才设置 `SIGNING_KEY`。
-
 ## ⚠️ 免责声明
 
 1. **仅供学习交流** —— 本项目仅用于技术学习与交流，不提供任何商业服务。
