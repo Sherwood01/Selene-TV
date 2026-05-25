@@ -26,8 +26,6 @@
   <img src="screenshot/05_live.png" alt="直播" width="48%">
 </details>
 
-源码见 [MoonTechLab/Selene-TV-source](https://github.com/MoonTechLab/Selene-TV-source)，本仓库负责构建与发布。
-
 ### 请不要在 B站、小红书、微信公众号、抖音、今日头条或其他中国大陆社交平台发布视频或文章宣传本项目，不授权任何"科技周刊/月刊"类项目或站点收录本项目。
 
 ---
