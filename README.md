@@ -4,14 +4,14 @@
   <img src="banner.png" alt="Selene-TV" width="440">
 </div>
 
-> 📺 **Selene-TV** 是以 [MoonTV](https://github.com/MoonTechLab/LunaTV) / [Helios](https://github.com/MoonTechLab/Helios) 为后端的 **Android TV（Leanback）客户端**，在保证原汁原味的同时，针对大屏与遥控器操作做了沉浸式重构。它基于 **Kotlin + Jetpack Compose for TV** 构建，使用 **ExoPlayer (Media3)** 播放，并内置手机扫码遥控。
+> 📺 **Selene-TV** 是以 [MoonTV](https://github.com/MoonTechLab/LunaTV) / [Helios](https://github.com/MoonTechLab/Helios) 为后端的 **Android TV（Leanback）客户端**，在保证原汁原味的同时，针对大屏与遥控器操作做了沉浸式重构。它基于 **Kotlin + Jetpack Compose for TV** 构建，采用 **ExoPlayer (Media3) / mpv** 双内核播放，并内置手机扫码遥控。
 
 <div align="center">
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white)
 ![Compose for TV](https://img.shields.io/badge/Compose%20for%20TV-Material3-4285F4?logo=jetpackcompose&logoColor=white)
 ![Android TV](https://img.shields.io/badge/Android%20TV-6.0+(API_23)-3DDC84?logo=androidtv&logoColor=white)
-![Media3](https://img.shields.io/badge/Player-ExoPlayer%20(Media3)-FF5722)
+![Media3](https://img.shields.io/badge/Player-ExoPlayer%20%2B%20mpv-FF5722)
 ![Leanback](https://img.shields.io/badge/Input-D--pad%20Only-555555)
 
 </div>
@@ -38,20 +38,24 @@
 
 ### 🎯 核心功能
 - **多源聚合搜索** —— 多个视频源并发聚合，快速定位想看的内容
+- **测速优选** —— 一键为各播放源并发测速，按画质 + 速度实时重排，快速选中最流畅的源
 - **分类浏览** —— 电影、剧集、动漫、综艺、直播，分类与地区筛选一应俱全
 - **动漫每日放送** —— Bangumi 风格的番剧周表，按星期追番
 - **继续观看 / 我的收藏** —— 自动记录播放进度断点续播，卡片长按管理
 - **直播频道** —— 央视、卫视、地方、赛事等分类直播
 - **手机扫码遥控** —— 内置 Web 服务器，手机扫码即可当遥控器与输入法
+- **灵活的使用方式** —— 既可连接 MoonTV / Helios 后端，也支持轻量的本地使用方式
 
 ### 🎨 用户体验
 - **影院级详情页** —— Apple TV 式全屏 Hero（接入 TMDB 剧照 / Logo），失败自动回退
+- **播放增强** —— 片头 / 片尾一键跳过（主要覆盖英美剧与番剧）、0.5×–2.0× 倍速、画面比例切换
 - **深色沉浸 UI** —— 纯深色、内容优先的设计，玻璃拟态与柔和聚焦动效
 - **D-pad 原生导航** —— 完全为遥控器设计，聚焦清晰、滚动流畅
 - **1080p 设计基准** —— 自动适配 4K，dp 尺寸一套到底
 
 ### 🔧 技术特性
-- **ExoPlayer (Media3) 播放** —— HLS / MP4 原生支持，自适应码率，自动判别格式
+- **双内核播放** —— ExoPlayer (Media3) 与 mpv 可按需切换，HLS / MP4 原生支持、自适应码率、自动判别格式，疑难片源也能流畅播放
+- **应用内更新** —— 启动自动检查新版本，应用内一键下载安装
 - **元数据增强** —— 接入豆瓣 / Bangumi / TMDB，封面、评分、剧照、续作信息
 - **智能缓存** —— 豆瓣数据与图片内存 + 磁盘双层缓存
 - **自签证书友好** —— 兼容自托管后端常见的明文 HTTP 与自签 TLS
@@ -71,6 +75,8 @@
 | `SeleneTV-<ver>-armeabi-v7a.apk` | **armv7a** (armeabi-v7a) | 32 位 ARM，较老设备 |
 
 > 不确定架构时优先选 **arm64-v8a**。可用 `adb install` 或文件管理器侧载安装。
+>
+> 首次安装后，应用会在启动时自动检查更新，后续可直接在应用内一键下载安装新版本。
 
 ## 📖 使用说明
 
@@ -89,7 +95,7 @@
 
 - **Kotlin 2.2** —— 开发语言
 - **Jetpack Compose for TV (Material3)** —— 声明式 TV UI 框架
-- **ExoPlayer (Media3)** —— HLS / MP4 播放后端
+- **ExoPlayer (Media3) / mpv** —— 双播放内核，可按需切换
 - **Ktor (Netty)** —— 内嵌 HTTP 服务器，承载手机遥控
 - **Coil** —— 图片加载与缓存（含豆瓣防盗链处理）
 - **OkHttp** —— 网络请求（信任自签证书）
