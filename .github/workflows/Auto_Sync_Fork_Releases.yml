@@ -1,0 +1,177 @@
+name: Auto Sync Fork with Releases
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天 UTC 2:00（北京时间 10:00）
+  workflow_dispatch:     # 支持手动触发
+
+env:
+  # 🔧 在这里配置你的上游仓库信息
+  UPSTREAM_REPO: "MoonTechLab/Selene-TV"  # 例如: "MoonTechLab/Selene"
+  UPSTREAM_URL: "https://github.com/MoonTechLab/Selene-TV.git"
+
+jobs:
+  sync-fork:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Add Upstream
+        run: |
+          git remote add upstream ${{ env.UPSTREAM_URL }} || true
+          git fetch upstream --tags
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Sync Safe Tags and Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== 开始同步 ${{ env.UPSTREAM_REPO }} ==="
+          
+          # 获取所有上游 Tags
+          git fetch upstream --tags
+          UPSTREAM_TAGS=$(git ls-remote --tags upstream | grep -v '\^{}' | awk -F/ '{print $3}' | sort -V)
+          
+          echo "发现上游 Tags:"
+          echo "$UPSTREAM_TAGS"
+          echo ""
+
+          # 处理每个 Tag
+          for TAG in $UPSTREAM_TAGS; do
+            echo "🔍 处理 Tag: $TAG"
+            
+            # 检查这个 Tag 是否包含 workflow 文件（安全过滤）
+            if git ls-tree -r upstream/$TAG --name-only | grep -q "^\.github/workflows/"; then
+              echo "❌ 跳过 $TAG (包含 workflow 文件)"
+              echo ""
+              continue
+            fi
+            
+            echo "✅ $TAG 是安全的 Tag"
+            
+            # 推送 Tag 到本地仓库
+            echo "📤 推送 Tag: $TAG"
+            git push origin "refs/tags/$TAG" 2>/dev/null || echo "ℹ️ Tag 可能已存在"
+            
+            # 检查上游是否有 Release
+            UPSTREAM_RELEASE_URL="https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/releases/tags/$TAG"
+            UPSTREAM_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$UPSTREAM_RELEASE_URL")
+            UPSTREAM_RELEASE_ID=$(echo "$UPSTREAM_RESPONSE" | jq -r '.id // empty')
+            
+            if [ -z "$UPSTREAM_RELEASE_ID" ]; then
+              echo "ℹ️ 上游没有 $TAG 的 Release"
+              echo ""
+              continue
+            fi
+            
+            # 检查上游 Release 是否有 Assets
+            ASSETS_COUNT=$(echo "$UPSTREAM_RESPONSE" | jq -r '.assets | length')
+            if [ "$ASSETS_COUNT" -eq 0 ]; then
+              echo "ℹ️ 上游 Release 没有 Assets"
+              echo ""
+              continue
+            fi
+            
+            echo "✅ 发现上游 Release 有 $ASSETS_COUNT 个 Assets"
+            
+            # 检查本地是否已有 Release
+            LOCAL_RELEASE_URL="https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG"
+            LOCAL_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$LOCAL_RELEASE_URL")
+            LOCAL_RELEASE_ID=$(echo "$LOCAL_RESPONSE" | jq -r '.id // empty')
+            
+            if [ -n "$LOCAL_RELEASE_ID" ]; then
+              echo "ℹ️ 本地已有 Release，跳过: $TAG"
+              echo ""
+              continue
+            fi
+            
+            # 下载 Assets
+            echo "📥 下载 Assets..."
+            mkdir -p "temp_assets/$TAG"
+            ASSET_URLS=$(echo "$UPSTREAM_RESPONSE" | jq -r '.assets[].browser_download_url')
+            
+            for ASSET_URL in $ASSET_URLS; do
+              if [ -n "$ASSET_URL" ]; then
+                FILENAME="temp_assets/$TAG/$(basename "$ASSET_URL")"
+                echo "⬇️ 下载: $(basename "$ASSET_URL")"
+                curl -L -o "$FILENAME" "$ASSET_URL" && echo "✅ 下载成功" || echo "❌ 下载失败"
+              fi
+            done
+            
+            # 创建 Release
+            if [ "$(ls -A temp_assets/$TAG/* 2>/dev/null)" ]; then
+              echo "🚀 创建 Release: $TAG"
+              
+              # 使用 GitHub API 创建 Release
+              RELEASE_DATA='{
+                "tag_name": "'$TAG'",
+                "name": "'$TAG' (Synced from ${{ env.UPSTREAM_REPO }})",
+                "body": "Automatically synced from ${{ env.UPSTREAM_REPO }}",
+                "draft": false,
+                "prerelease": false
+              }'
+              
+              CREATE_RESPONSE=$(curl -s -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Content-Type: application/json" \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+                -d "$RELEASE_DATA")
+              
+              NEW_RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id // empty')
+              
+              if [ -n "$NEW_RELEASE_ID" ]; then
+                echo "✅ Release 创建成功，ID: $NEW_RELEASE_ID"
+                
+                # 上传 Assets
+                for ASSET_FILE in temp_assets/$TAG/*; do
+                  if [ -f "$ASSET_FILE" ]; then
+                    ASSET_NAME=$(basename "$ASSET_FILE")
+                    echo "⬆️ 上传: $ASSET_NAME"
+                    
+                    UPLOAD_RESPONSE=$(curl -s -X POST \
+                      -H "Authorization: token $GITHUB_TOKEN" \
+                      -H "Accept: application/vnd.github.v3+json" \
+                      -H "Content-Type: application/octet-stream" \
+                      "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$NEW_RELEASE_ID/assets?name=$ASSET_NAME" \
+                      --data-binary @"$ASSET_FILE")
+                    
+                    if echo "$UPLOAD_RESPONSE" | jq -r '.id // empty' | grep -q .; then
+                      echo "✅ 上传成功: $ASSET_NAME"
+                    else
+                      echo "❌ 上传失败: $ASSET_NAME"
+                    fi
+                  fi
+                done
+              else
+                echo "❌ Release 创建失败"
+                echo "响应: $CREATE_RESPONSE"
+              fi
+            else
+              echo "❌ 没有可用的 Assets 文件"
+            fi
+            
+            echo ""
+          done
+
+      - name: Cleanup
+        run: |
+          rm -rf temp_assets
+          echo "=== 同步完成 ==="
+          echo "✅ 安全的 Tags 和 Releases 已同步"
+          echo "📊 查看结果: https://github.com/$GITHUB_REPOSITORY/releases"

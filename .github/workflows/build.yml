@@ -20,13 +20,15 @@ jobs:
     name: Build & Release
     runs-on: ubuntu-latest
     env:
-      # 源码仓库（私有），通过 PULL_TOKEN 拉取
-      SOURCE_REPO: github.com/MoonTechLab/Selene-TV-source
+      # 源码仓库（公开），使用 GITHUB_TOKEN 认证
+      SOURCE_REPO: MoonTechLab/Selene-TV
 
     steps:
       - name: Clone source repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git clone "https://${SOURCE_REPO}.git" .
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${SOURCE_REPO}.git" .
           echo "Cloned $(git rev-parse --short HEAD) from ${SOURCE_REPO}"
 
       - name: Resolve version
