@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Clone source repository
         run: |
-          git clone "https://${{ secrets.PULL_TOKEN }}@${SOURCE_REPO}.git" .
+          git clone "https://${SOURCE_REPO}.git" .
           echo "Cloned $(git rev-parse --short HEAD) from ${SOURCE_REPO}"
 
       - name: Resolve version
