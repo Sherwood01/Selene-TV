@@ -95,7 +95,21 @@ jobs:
             LOCAL_RELEASE_ID=$(echo "$LOCAL_RESPONSE" | jq -r '.id // empty')
             
             if [ -n "$LOCAL_RELEASE_ID" ]; then
-              echo "ℹ️ 本地已有 Release，跳过: $TAG"
+              echo "ℹ️ 本地已有 Release，更新 release notes: $TAG"
+
+              # 获取上游 release notes
+              UPSTREAM_BODY=$(echo "$UPSTREAM_RESPONSE" | jq -r '.body // ""')
+
+              # 使用 PATCH API 更新 release body
+              UPDATE_DATA=$(jq -n --arg body "$UPSTREAM_BODY" '{ "body": $body }')
+
+              curl -s -X PATCH \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Content-Type: application/json" \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/$LOCAL_RELEASE_ID" \
+                -d "$UPDATE_DATA" > /dev/null && echo "✅ Release notes 已更新" || echo "❌ Release notes 更新失败"
+
               echo ""
               continue
             fi
