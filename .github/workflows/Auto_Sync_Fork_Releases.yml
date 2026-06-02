@@ -30,7 +30,7 @@ jobs:
       - name: Add Upstream
         run: |
           git remote add upstream ${{ env.UPSTREAM_URL }} || true
-          git fetch upstream --tags
+          git fetch upstream --tags --force
 
       - name: Install Dependencies
         run: |
@@ -44,7 +44,7 @@ jobs:
           echo "=== 开始同步 ${{ env.UPSTREAM_REPO }} ==="
           
           # 获取所有上游 Tags
-          git fetch upstream --tags
+          git fetch upstream --tags --force
           UPSTREAM_TAGS=$(git ls-remote --tags upstream | grep -v '\^{}' | awk -F/ '{print $3}' | sort -V)
           
           echo "发现上游 Tags:"
